@@ -1,11 +1,17 @@
 from __future__ import division, print_function
 
+import copy
+import pprint
+
 import tempfile
 
 import numpy as np
+import six
 import sklearn.metrics as skmetrics
 import tensorflow as tf
+from keras import backend as K
 from keras.callbacks import Callback
+from keras.layers.pooling import _GlobalPooling2D
 
 
 class tempmap(np.memmap):
@@ -151,3 +157,270 @@ def make_product_matrix(vect_inp):
     assert_op = tf.Assert(tf.equal(tf.shape(ret)[-2], tf.shape(ret)[-3]), [ret])
     with tf.control_dependencies([assert_op]):
         return ret
+
+
+class GlobalMaxPooling1DFrom4D(_GlobalPooling2D):
+    """Global max pooling operation for spatial data.
+
+    # Arguments
+        data_format: A string,
+            one of `channels_last` (default) or `channels_first`.
+            The ordering of the dimensions in the inputs.
+            `channels_last` corresponds to inputs with shape
+            `(batch, height, width, channels)` while `channels_first`
+            corresponds to inputs with shape
+            `(batch, channels, height, width)`.
+            It defaults to the `image_data_format` value found in your
+            Keras config file at `~/.keras/keras.json`.
+            If you never set it, then it will be "channels_last".
+
+    # Input shape
+        - If `data_format='channels_last'`:
+            4D tensor with shape:
+            `(batch_size, rows, cols, channels)`
+        - If `data_format='channels_first'`:
+            4D tensor with shape:
+            `(batch_size, channels, rows, cols)`
+
+    # Output shape
+        3D tensor with shape:
+        `(batch_size, channels)`
+    """
+    
+    def call(self, inputs):
+        if self.data_format == 'channels_last':
+            return K.max(inputs, axis=-2)
+        else:
+            return K.max(inputs, axis=-2)
+    
+    def compute_output_shape(self, input_shape):
+        if self.data_format == 'channels_last':
+            return (input_shape[0], input_shape[1], input_shape[3])
+        else:
+            return (input_shape[0], input_shape[1], input_shape[3])
+
+
+def tf_dataset_as_iterator(ds, sess=K.get_session()):
+    # most basic way to use tf dataset. Not optimal.
+    iterator = ds.make_one_shot_iterator()
+    
+    iternext = iterator.get_next()
+    # or    with tf.Session() as sess:
+    while True:
+        ret = sess.run(iternext)
+        yield ret
+
+
+def evaluate(validation_data, validation_steps, model, config):
+    # as_binary_problems=False, predict_gold_f=self.predictions_golds_from_batch
+    y_pred_percent, y_real_classes = collect_eval_data(validation_data, validation_steps, model, config)
+    all_m = array_all_classification_metrics(y_pred_percent, y_real_classes,
+                                             classnames=None,  # config['data_config']['bools_names'],
+                                             as_binary_problems=True)
+    
+    try:
+        body_i = config['data_config']['bools_names'].index('table_body')
+        metrics_r = all_m[body_i]['metricsreport']
+        table_body = (metrics_r[2][0] * metrics_r[3][0] + metrics_r[2][1] * metrics_r[3][1]) / (
+                metrics_r[3][0] + metrics_r[3][1])
+    except:
+        body_i = None
+        table_body = "N/A"
+    try:
+        head_i = config['data_config']['bools_names'].index('table_header')
+        metrics_r = all_m[head_i]['metricsreport']
+        table_head = (metrics_r[2][0] * metrics_r[3][0] + metrics_r[2][1] * metrics_r[3][1]) / (
+                metrics_r[3][0] + metrics_r[3][1])
+    except:
+        head_i = None
+        table_head = "N/A"
+    
+    # if None not in [table_head, table_body]:
+    #     tables_confusion = np.sum([all_m[i]['confusion'] for i in [table_head, table_body]])
+    # else:
+    #     tables_confusion = None
+    
+    all_nontable = [item for i, item in enumerate(all_m) if i not in [body_i, head_i]]
+    nontable_confusion = sum([np.asarray(score['confusion']) for score in all_nontable])
+    all_confusion = sum([np.asarray(score['confusion']) for score in all_m])
+    
+    def acc_rep(good, extra, miss, total):
+        not_missing = good + extra
+        precision = good / not_missing if not_missing > 0 else 0.0
+        not_extra = good + miss
+        recall = good / not_extra if not_extra > 0 else 0.0
+        accuracy = good / total if total > 0.0 else 0.0
+        p_plus_r = precision + recall
+        f1 = 2.0 * precision * recall / p_plus_r if p_plus_r > 0.0 else 0.0
+        return {"prec": precision, "recall": recall,
+                "accuracy": accuracy,
+                "f1": f1}
+    
+    def print_confs(conf_m):
+        
+        if not isinstance(conf_m, np.ndarray):
+            return None
+        
+        if conf_m.shape != (2, 2):
+            # print("N/A (too small dataset to contain both gs and preds)")
+            return None
+        
+        good = conf_m[0][0] + conf_m[1][1]
+        extra = conf_m[1][0]
+        miss = conf_m[0][1]
+        total = np.sum(conf_m)
+        
+        return {"all-micro": acc_rep(good, extra, miss, total),
+                "nonbg-micro": acc_rep(conf_m[1][1], extra, miss, conf_m[1][1] + extra + miss),
+                "conf": conf_m,
+                }
+    
+    result = {"table_body": table_body, "table_head": table_head,
+              "all": print_confs(all_confusion),
+              "nontables": print_confs(nontable_confusion),
+              }
+    
+    print("tldr:")
+    # print(result)
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(result)
+    
+    return result
+
+
+def collect_eval_data(validation_data, validation_steps, model, config, use_np_tmp=False):
+    if not use_np_tmp:
+        array_represent = lambda x: x
+    else:
+        array_represent = np_as_tmp_map
+    
+    classes = None
+    reals = []
+    preds = []
+    for i in range(0, validation_steps):
+        batch = six.next(validation_data)
+        for item, pred in iterate_predictions_batch(batch, model, config):
+            # item is (x, y, sample weights )
+            # throw away all samples that have zero weigts!
+            x, y, sample_weights = item
+            
+            use_samples = np.nonzero(sample_weights)
+            x = {key: x[key][use_samples] for key in x}
+            y = y[use_samples]
+            pred = pred[use_samples]
+            
+            if y.ndim <= 1:
+                this_classes = 1
+            else:
+                this_classes = y.shape[-1]
+            
+            if classes is None:
+                classes = this_classes
+            
+            assert classes == this_classes
+            
+            # y_pred_percent = tempmap(shape=(totlen, classes), dtype=np.float)
+            ritem = array_represent(np.reshape(y, (-1, classes)))
+            pitem = array_represent(np.reshape(pred, (-1, classes)))
+            assert ritem.shape == pitem.shape
+            reals.append(ritem)
+            preds.append(pitem)
+    
+    totlen = sum([real.shape[0] for real in reals])
+    y_pred_percent = tempmap(shape=(totlen, classes), dtype=np.float32)
+    y_pred_percent[:, ...] = 0
+    y_real_classes = tempmap(shape=(totlen, classes), dtype=np.float32)
+    y_real_classes[:, ...] = 0
+    # btw if classes == 1 that means the model predicts class ids directly and not probabilities, so
+    # we will not be able to compute auc roc.
+    
+    curr = 0
+    for real, pred in zip(reals, preds):
+        y_pred_percent[curr:(curr + pred.shape[0]), :] = pred
+        y_real_classes[curr:(curr + real.shape[0]), :] = real
+        curr += real.shape[0]
+    
+    return y_pred_percent, y_real_classes
+
+
+def expand_batch(data):
+    """
+    The input is some struct full of lists, dictss and ultimately numpy arrays.
+    We will deconstruct the struct and yield individual items from the batch. In the same format as the input.
+    """
+    str_o = StructIndexer.from_example(data)
+    indexed = str_o.unpack_from(data)
+    batch_size = len(indexed[indexed.keys()[0]])  # if it is a numpy array, it should give us the leftmost dimension
+    # or if it is just a list then the length of the list...
+    for b in range(batch_size):
+        expanded = {k: indexed[k][b] for k in indexed.keys()}
+        yield str_o.pack_from(expanded)
+
+
+def iterate_predictions_batch(batch, model, config):
+    predictions = model.predict_on_batch(batch[0])
+    for item, pred in zip(expand_batch(batch), expand_batch(predictions)):
+        yield item, pred
+
+
+class StructIndexer(object):
+    def __init__(self, indices, classes_struct):
+        self.indices = indices
+        self.clases_struct = classes_struct
+    
+    def unpack_from(self, data):
+        if self.indices is None:
+            return {None: data}
+        indexed = {}
+        for indice in self.indices:
+            indexed[tuple(indice)] = self._get_indexed(data, indice)
+        return indexed
+    
+    def _get_indexed(self, data, indice):
+        x = data
+        for index in indice:
+            x = x[index]
+        return x
+    
+    def _set_indexed(self, data, indice, value):
+        x = data
+        for index in indice[:-1]:
+            x = x[index]
+        x[indice[-1]] = value
+    
+    def pack_from(self, indexed):
+        if self.indices is None:
+            return indexed[None]
+        data = copy.deepcopy(self.clases_struct)
+        for indice in indexed.keys():
+            self._set_indexed(data, indice, indexed[indice])
+        return data
+    
+    @classmethod
+    def from_example(cls, struct):
+        if isinstance(struct, dict) or isinstance(struct, list) or isinstance(struct, tuple):
+            indices, clstruct = cls.analyze([], struct)
+        else:
+            indices = None
+            clstruct = None
+        return cls(indices, clstruct)
+    
+    @classmethod
+    def analyze(cls, indexes, template):
+        struct_indices = []
+        struct_classes = None
+        if isinstance(template, dict):
+            struct_classes = {}
+            for key in template.keys():
+                new_indices, new_classes = cls.analyze(tuple(list(indexes) + [key]), template[key])
+                struct_indices.extend(new_indices)
+                struct_classes[key] = new_classes
+        elif isinstance(template, list) or isinstance(template, tuple):
+            struct_classes = [None] * len(template)
+            for key in range(len(template)):
+                new_indices, new_classes = cls.analyze(tuple(list(indexes) + [key]), template[key])
+                struct_indices.extend(new_indices)
+                struct_classes[key] = new_classes
+        else:
+            return tuple([indexes]), None
+        return tuple(struct_indices), struct_classes
