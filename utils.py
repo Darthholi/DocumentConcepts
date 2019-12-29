@@ -1,15 +1,16 @@
 from __future__ import division, print_function
 
 import copy
+import datetime
 import pprint
-
 import tempfile
+import warnings
 
+import keras.backend as K
 import numpy as np
 import six
 import sklearn.metrics as skmetrics
 import tensorflow as tf
-from keras import backend as K
 from keras.callbacks import Callback
 from keras.layers.pooling import _GlobalPooling2D
 
@@ -124,12 +125,59 @@ class EvaluateFCallback(Callback):
     Calls evaluate function each time a key metric improves (or after each epoch if key metric not provided).
     """
     
-    def __init__(self, evaluation_f, validation_gen, validation_steps, config, monitor=None, mode=None, min_delta=0):
+    def __init__(self, evaluation_f, monitor=None, mode=None, min_delta=0):
         super(EvaluateFCallback, self).__init__()
         self.evaluation_f = evaluation_f
-        self.validation_data = validation_gen
-        self.validation_steps = validation_steps
-        self.config = config
+        
+        # copied from keras earlystopping:
+        self.min_delta = min_delta
+        self.monitor = monitor
+        if mode not in ['auto', 'min', 'max', None]:
+            warnings.warn('EvaluateFCallback mode %s is unknown, '
+                          'fallback to auto mode.' % mode,
+                          RuntimeWarning)
+            mode = 'auto'
+        
+        if mode == 'min':
+            self.monitor_op = np.less
+        elif mode == 'max':
+            self.monitor_op = np.greater
+        else:  # auto:
+            if 'acc' in self.monitor:
+                self.monitor_op = np.greater
+            else:
+                self.monitor_op = np.less
+        
+        if self.monitor_op == np.greater:
+            self.min_delta *= 1
+        else:
+            self.min_delta *= -1
+    
+    def on_train_begin(self, logs=None):
+        self.best = np.Inf if self.monitor_op == np.less else -np.Inf
+    
+    def on_epoch_end(self, epoch, logs=None):
+        current = None
+        run_e = False
+        if self.monitor is not None and logs is not None:
+            current = logs.get(self.monitor)
+            if current is None:
+                warnings.warn(
+                    'EvaluateFCallback evaluating on on metric `%s` '
+                    'which is not available. Available metrics are: %s' %
+                    (self.monitor, ','.join(list(logs.keys()))), RuntimeWarning
+                )
+                return
+            if self.monitor_op(current - self.min_delta, self.best):
+                self.best = current
+                run_e = True
+        else:
+            run_e = True
+        if run_e:  # either we do not use the 'eval on best metric' mechanism or we do:
+            before = datetime.datetime.now()
+            self.evaluation_f()
+            after = datetime.datetime.now()
+            print("EvaluateFCallback calculated evaluations in {} seconds".format((after - before).total_seconds()))
 
 
 def make_product_matrix(vect_inp):
