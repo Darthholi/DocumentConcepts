@@ -17,9 +17,9 @@ from sacred.utils import apply_backspaces_and_linefeeds
 
 from distributions import conditioned_continuous, StochasticScorableWrapper, FixdimDistribution, MultiDistribution, \
     DistributionAsRadial
-from concepts_fixed import run_keras_fixed_experiment_categorical, random_testing_setting_distances, realistic_setting, constant_testing_setting_multiclass, run_keras_fixed_experiment_binary
+from concepts_fixed import run_keras_fixed_experiment_categorical, random_testing_setting_distances, realistic_setting, \
+    constant_testing_setting_multiclass, run_keras_fixed_experiment_binary, run_keras_fixed_experiment_binary_bigger
 from concepts_rendered import run_keras_articlemodel, run_keras_rendered_experiment_binary, run_keras_rendered_experiment_categorical
-from concepts_test import test_jensen_shannon
 
 
 # % matplotlib inline
@@ -91,7 +91,6 @@ def sample_concepts_example():
                          linewidth=2, markersize=12)
         plt.ylim(lims)
         plt.xlim(lims)
-        # fig1.show()
         fig1.savefig("plot{}.png".format(i))
         print("saved figure")
 
@@ -99,17 +98,8 @@ def sample_concepts_example():
 @concept_experiments.command
 def paint_distribution():
     """
-    Visual int
+    Visual inspection of distribution generators.
     """
-    """
-    gaussian_smoothed_discrete(st.rv_discrete(values=
-                                              ([0], [1.0])
-                                              ), smooth_scale=1.0)gaussian_smoothed_discrete(st.rv_discrete(values=
-                                                                                           ([0], [1.0])
-                                                                                           ), smooth_scale=1.0)
-    """
-    #  dist = st.norm(loc=[0], scale=[1])
-    # dist = st.gamma(loc=[0], scale=[1], a=1.)
     
     dist = conditioned_continuous(st.rv_discrete(values=([0, 1], [0.5, 0.5])),
                                   [st.norm(loc=-2, scale=1), st.norm(loc=2, scale=1)])
@@ -123,27 +113,20 @@ def paint_distribution():
     X = np.linspace(-5.0, 5.0, 100)
     ax1.plot(X, dist.pdf(X), label='PDF')
     
-    # ax1.plot([c_ce[0], i_ce[0]], [c_ce[1], i_ce[1]], color='green', marker='o', linestyle='dashed',
-    #         linewidth=2, markersize=12)
     plt.ylim((-1, 1))
     plt.xlim((-5, 5))
-    # fig1.show()
     fig1.savefig("plotdist.png")
     print("saved figure")
 
 
 @concept_experiments.command
 def paint_2ddistribution():
+    """
+    Visual inspection of two dimensional distribution generators.
+    """
     dist = MultiDistribution([StochasticScorableWrapper(st.norm(loc=0.3, scale=0.05)),
                               StochasticScorableWrapper(st.norm(loc=0, scale=2))])
     dist = DistributionAsRadial(dist)
-    """
-    dist = MultiDistribution([StochasticScorableWrapper(conditioned_continuous(st.rv_discrete(values=([0, 1], [0.5, 0.5])),
-                                                                               [st.norm(loc=-2, scale=1), st.norm(loc=2, scale=1)])),
-                                                        StochasticScorableWrapper(
-                                                            conditioned_continuous(st.rv_discrete(values=([0, 1], [0.5, 0.5])),
-                                                     [st.norm(loc=-2, scale=1), st.norm(loc=2, scale=1)]))])
-    """
     
     fig1 = plt.figure()  # figsize=(10, 10))
     ax1 = fig1.add_subplot(111, aspect='equal')
@@ -151,21 +134,14 @@ def paint_2ddistribution():
     data = dist.draw_samples((500,))
     
     ax1.plot(data[..., 0], data[..., 1], 'bo')
-    
-    # ax1.plot([c_ce[0], i_ce[0]], [c_ce[1], i_ce[1]], color='green', marker='o', linestyle='dashed',
-    #         linewidth=2, markersize=12)
-    # plt.ylim((-5, 5))
-    # plt.xlim((-5, 5))
-    # fig1.show()
     fig1.savefig("plot2dist.png")
-    print("saved figure")
 
 
 @concept_experiments.command
 def fixed_known_borders():
     """
-    #todo delete this one and
-    with known borders of concepts: 'apriori info'
+    Experiment with known borders of concepts: 'apriori info'.
+    Gets to 0.97 bin acc, ourf1nonbg: 0.83 all f1micro 0.96,
     """
     max_acc = run_keras_fixed_experiment_binary(realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1),
                                       validation_pages=100,
@@ -181,34 +157,14 @@ def fixed_known_borders():
                                       df_proc_num=1,
                                       )
     print(max_acc)
-    # realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1)
-    # gets to 0.97 bin acc, ourf1nonbg: 0.83 all f1micro 0.96
     
 
 @concept_experiments.command
-def realistic_experiment():
+def fixed_known_borders_bigger():
     """
-    #with known borders of concepts: 'apriori info'
-    max_acc = run_keras_fixed_experiment_binary(realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1),
-                                      validation_pages=100,
-                                      n_epochs=100,
-                                      verbose=2,
-                                      stop_early=True,
-                                      key_metric='val_loss',
-                                      weights_best_fname='weightstmp.h5',
-                                      patience=20,
-                                      key_metric_mode='min',
-                                      pages_per_epoch=200,
-                                      batch_size=8,
-                                      df_proc_num=2,
-                                      )
-    print(max_acc)
-    # realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1)
-    # gets to 0.97 bin acc, ourf1nonbg: 0.83 all f1micro 0.96
+    Experiment with known borders of concepts: 'apriori info', but with bigger network and bigger setting.
+    Gets to 0.98 bin acc, ourf1nonbg: 0.97 all f1micro 0.99
     """
-    
-    """
-    # witth known borderss of concepts: 'apriori info' but bigger
     max_acc = run_keras_fixed_experiment_binary_bigger(realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
                                                 validation_pages=100,
                                                 n_epochs=100,
@@ -220,17 +176,25 @@ def realistic_experiment():
                                                 key_metric_mode='min',
                                                 pages_per_epoch=200,
                                                 batch_size=8,
-                                                df_proc_num=2,
+                                                df_proc_num=1,
                                                 )
     print(max_acc)
-    # realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1)
-    # gets to 0.97 bin acc, ourf1nonbg: 0.94 all f1micro 0.98
-    """
     
+    
+@concept_experiments.command
+def fixed_known_borders_all_boxes_noshuffle():
     """
-    # witth known borderss of concepts: AND AALL BOXES
-    max_acc = run_keras_fixed_experiment_binary(realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1),
-                                                zero_class=[0]*4,
+    Experiment with known borders of concepts but trying to predict all boxes (not only concept's interiors)
+    and not shuffled.
+    
+    realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), predict all, shuffle false
+    gets again to accuracy 0.96 and nonbg f1 0.76
+    
+    but realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7)
+    gets to nonbg f1 0.71
+    """
+    max_acc = run_keras_fixed_experiment_binary(realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
+                                                zero_class=[0]*18,
                                                 validation_pages=100,
                                                 n_epochs=100,
                                                 verbose=1,
@@ -241,18 +205,24 @@ def realistic_experiment():
                                                 key_metric_mode='min',
                                                 pages_per_epoch=200,
                                                 batch_size=8,
-                                                df_proc_num=2,
+                                                df_proc_num=1,
                                                 predict_all_boxes=True,
                                                 shuffle_bboxes=False
                                                 )
     print(max_acc)
-    # realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), predict all, shuffle false
-    # gets again to accuracy 0.96 and nonbg f1 0.76
-    # realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7)
+
+
+@concept_experiments.command
+def fixed_known_borders_all_boxes_noshuffle():
     """
+    Experiment with known borders of concepts but trying to predict all boxes (not only concept's interiors)
+    and not shuffled.
     
+    realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), predict all, shuffle false
+    goes to nonbg micro f1 0.87 (all micro f1 0.98)
+    realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
+    nonbg f1 0.91
     """
-    # witth known borderss of concepts: AND AALL BOXES and bigger
     max_acc = run_keras_fixed_experiment_binary_bigger(realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
                                                 zero_class=[0] * 18,
                                                 validation_pages=100,
@@ -270,14 +240,15 @@ def realistic_experiment():
                                                 shuffle_bboxes=False
                                                 )
     print(max_acc)
-    # realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), predict all, shuffle false
-    # goes to nonbg micro f1 0.87 (all micro f1 0.98)
-    # realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
-    # nonbg f1 0.91
-    """
     
+
+@concept_experiments.command
+def fixed_known_borders_all_boxes_shuffle():
     """
     # witth known borderss of concepts: AND AALL BOXES and bigger AND SHUFFLING
+    # realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
+    # # goes to nonbg micro f1 0.88 (all micro f1 0.99)
+    """
     max_acc = run_keras_fixed_experiment_binary_bigger(realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
                                                        zero_class=[0] * 18,
                                                        validation_pages=100,
@@ -290,17 +261,22 @@ def realistic_experiment():
                                                        key_metric_mode='min',
                                                        pages_per_epoch=200,
                                                        batch_size=8,
-                                                       df_proc_num=2,
+                                                       df_proc_num=1,
                                                        predict_all_boxes=True,
                                                        shuffle_bboxes=True
                                                        )
     print(max_acc)
-    # realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
-    # # goes to nonbg micro f1 0.88 (all micro f1 0.99)
-    """
     
+
+@concept_experiments.command
+def baseline_rendered():
     """
-    # baseline
+    baseline
+    realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1)
+    goes to 0.59 nonbg micro
+    with
+    bin_class_weights=(4.0, 1.0) goes to 0.80 nonbg micro f1
+    """
     run_keras_rendered_experiment_binary(realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), zero_class=[0]*4,
                                       validation_pages=100,
                                       n_epochs=100,
@@ -312,16 +288,30 @@ def realistic_experiment():
                                       key_metric_mode='min',
                                       pages_per_epoch=200,
                                       batch_size=8,
-                                      df_proc_num=2,
+                                      df_proc_num=1,
                                       neighbours=3,
                                       bin_class_weights=(80.0, 1.0),
                                          )
-    # realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1)
-    # goes to 0.59 nonbg micro
-    with
-    bin_class_weights=(4.0, 1.0) goes to 0.80 nonbg micro f1
+
+@concept_experiments.command
+def articlemodel():
     """
+    # articlemodel:
+    # tot_classes=18, num_pp_high=13, num_pp_low=7:
+    # gets to nonbg micro f1 to >> 0.35 << in 90 epochs with bin_class_weights=(800.0, 1.0)
+    # same for bin_class_weights=(80.0, 1.0)
+    # so to see the results, it needed to see like 90*200 pages
     
+    # (tot_classes=10, num_pp_high=7, num_pp_low=4:
+    # 0.36, bin_class_weights=(80.0, 1.0)
+    
+    # tot_classes=8, num_pp_high=5, num_pp_low=2
+    # 0.40  # was on nu, neiighbours = 3, 5 ddoes not help, 7 does not help
+    # tot_classes=8, num_pp_high=5, num_pp_low=2 & neighbours = 1 helps
+    # - 0.42
+    
+    # tot_classes = 4, num_pp_high = 2, num_pp_low = 1
+    # 0.674
     """
     maxscore = run_keras_articlemodel(realistic_setting(tot_classes=4, num_pp_high=1, num_pp_low=1), zero_class=[0]*4,
                                       validation_pages=100,
@@ -341,26 +331,9 @@ def realistic_experiment():
                                       n_siz=2
                                       )
     print(maxscore)
-    """
     
-    # articlemodel:
-    # tot_classes=18, num_pp_high=13, num_pp_low=7:
-    # gets to nonbg micro f1 to >> 0.35 << in 90 epochs with bin_class_weights=(800.0, 1.0)
-    # same for bin_class_weights=(80.0, 1.0)
-    # so to see the results, it needed to see like 90*200 pages
-    
-    # (tot_classes=10, num_pp_high=7, num_pp_low=4:
-    # 0.36, bin_class_weights=(80.0, 1.0)
-    
-    # tot_classes=8, num_pp_high=5, num_pp_low=2
-    # 0.40  # was on nu, neiighbours = 3, 5 ddoes not help, 7 does not help
-    # tot_classes=8, num_pp_high=5, num_pp_low=2 & neighbours = 1 helps
-    # - 0.42
-    
-    # tot_classes = 4, num_pp_high = 2, num_pp_low = 1
-    # 0.674
-    
-    # ok lets see hhow it can do it with apriori info ('run_keras_fixed_experiment_binary') and only with center bboxes
+"""
+# ok lets see hhow it can do it with apriori info ('run_keras_fixed_experiment_binary') and only with center bboxes
     # gets to 0.97 binary acc but ourf1nonbg: 0.83, all f1micro 0.96
     # 1) so first we need a bigger network? ('run_keras_fixed_experiment_binary_bigger')
     # ok when making the network bigger it is able to - gets to 0.97 bin acc, ourf1nonbg: 0.94 all f1micro 0.98
@@ -401,7 +374,9 @@ def realistic_experiment():
     # the problem is different - in invoices there is some information we thought would be redundant when modeling with concepts.
     # but so far when rendering-derendering only concepts, the network is unable to continue with a good precision.
     
-    """
+"""
+
+"""
     class counts are cca 100 positive / per 8000 total
 
     has effectivity of a random guessing, needs class weights:
@@ -417,6 +392,10 @@ def realistic_experiment():
         return s_weights
 
     """
+
+
+@concept_experiments.command
+def realistic_experiment():
     
     """
     # since we believe that it is now a harder task, lets try a model that sees everything without attention:
@@ -470,7 +449,7 @@ def realistic_experiment():
     print(maxscore)
     """
     run_keras_rendered_experiment_binary(
-        realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1, keep_local=False),
+        realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1, keep_near=False),
         zero_class=[0] * 4,
         validation_pages=100,
         n_epochs=100,
@@ -602,137 +581,6 @@ def rendered_experiment():
                                       neighbours=3
                                       )
     print(maxscore)
-
-
-@concept_experiments.command
-def try_tf():
-    # to gather the diagnal
-    import tensorflow as tf
-    def diag2d(arr):
-        """
-        input [..., batches, N, N, features]
-        output [..., batches, N, features]
-        """
-        arrshape = tf.shape(arr)
-        # assert arrshape[-3] == arrshape[-2] that it is square before features dimension
-        newshape = tf.concat([arrshape[0:-3], [-1], arrshape[-1:]], axis=-1)
-        arr = tf.reshape(arr, newshape)
-        
-        diagind = tf.range(arrshape[-3]) * (arrshape[-2] + 1)
-        return tf.gather(
-            arr,
-            diagind,
-            axis=-2,
-        )
-    
-    inp = tf.constant([[[1], [4]],
-                       [[5], [2]]])
-    outp = diag2d(inp)
-    
-    inp2 = tf.constant([[[1, 0], [4, 5], [0, 0]],
-                        [[5, 6], [2, 2], [1, 1]],
-                        [[4, 4], [3, 1], [3, 100]]])
-    outp2 = diag2d(inp2)
-    
-    with tf.Session() as sess:
-        # Run the initializer on `w`.
-        # sess.run(tf.initialize_all_variables())
-        got_result = sess.run([outp, outp2])  # or a list of things.
-        print(got_result)
-
-
-@concept_experiments.command
-def try_scipy():
-    import scipy.stats as st
-    import numpy as np
-    dist_try = st.uniform(loc=0, scale=10.0)  # st.norm(loc=0, scale=1)#
-    points = dist_try.rvs(size=2)
-    print(points)
-    scores = dist_try.pdf(points)
-    print(scores)
-    
-    dist_try = st.uniform(loc=[0, 5], scale=[1.0, 1.0])  # st.norm(loc=0, scale=1)#
-    points = dist_try.rvs(size=(100, 2))
-    print(points)
-    scores = dist_try.pdf(points)
-    print(scores)
-    
-    dist_try = FixdimDistribution(st.uniform, item_dimension=2, loc=0.5, scale=0.1)
-    points = dist_try.rvs(size=(100, 2))
-    print(points)
-    
-    # still then we need to compute things like https://stackoverflow.com/questions/26079881/kl-divergence-of-two-gmms
-    
-    def distributions_js(distribution_p, distribution_q, n_samples=10 ** 5):
-        # jensen shannon divergence. (Jensen shannon distance is the square root of the divergence)
-        # all the logarithms are defined as log2 (because of information entrophy)
-        X = distribution_p.rvs(size=n_samples)
-        p_X = distribution_p.pdf(X)
-        q_X = distribution_q.pdf(X)
-        log_mix_X = np.log2(p_X + q_X)
-        
-        Y = distribution_q.rvs(size=n_samples)
-        p_Y = distribution_p.pdf(Y)
-        q_Y = distribution_q.pdf(Y)
-        log_mix_Y = np.log2(p_Y + q_Y)
-        
-        jsp_m = np.log2(p_X).mean() - (log_mix_X.mean() - np.log2(2))
-        jsq_m = np.log2(q_Y).mean() - (log_mix_Y.mean() - np.log2(2))
-        
-        return (jsp_m + jsq_m) / 2
-    
-    def distributions_discrete_js(distribution_p, distribution_q, n_samples=10 ** 5):
-        # jensen shannon divergence. (Jensen shannon distance is the square root of the divergence)
-        # all the logarithms are defined as log2 (because of information entrophy)
-        X = distribution_p.rvs(size=n_samples)
-        p_X = distribution_p.pmf(X)
-        q_X = distribution_q.pmf(X)
-        log_mix_X = np.log2(p_X + q_X)
-        
-        Y = distribution_q.rvs(size=n_samples)
-        p_Y = distribution_p.pmf(Y)
-        q_Y = distribution_q.pmf(Y)
-        log_mix_Y = np.log2(p_Y + q_Y)
-        
-        return (np.log2(p_X).mean() - (log_mix_X.mean() - np.log2(2))
-                + np.log2(q_Y).mean() - (log_mix_Y.mean() - np.log2(2))) / 2
-    
-    def distributions_discrete_cont_js(distribution_p, distribution_q, n_samples=10 ** 5):
-        # jensen shannon divergence. (Jensen shannon distance is the square root of the divergence)
-        # all the logarithms are defined as log2 (because of information entrophy)
-        X = distribution_p.rvs(size=n_samples)
-        p_X = distribution_p.pmf(X)
-        q_X = distribution_q.pdf(X)
-        log_mix_X = np.log2(p_X + q_X)
-        
-        Y = distribution_q.rvs(size=n_samples)
-        p_Y = distribution_p.pmf(Y)
-        q_Y = distribution_q.pdf(Y)
-        log_mix_Y = np.log2(p_Y + q_Y)
-        
-        jsp_m = np.log2(p_X).mean() - (log_mix_X.mean() - np.log2(2))
-        jsq_m = np.log2(q_Y).mean() - (log_mix_Y.mean() - np.log2(2))
-        
-        return (jsp_m + jsq_m) / 2
-    
-    print("experiment small and norrmal (distance)")
-    print(np.sqrt(distributions_js(st.norm(loc=0), st.norm(loc=0, scale=0.01))))
-    
-    print("experiment uniforms: (distance)")
-    print(np.sqrt(distributions_js(st.uniform(loc=0), st.uniform(loc=0, scale=2))))
-    
-    print("experiment:")
-    p = st.rv_discrete(values=([0, 1, 2], [0.25, 0.5, 0.25]))
-    print(distributions_discrete_js(p, p))
-    
-    print("experiment:")
-    print(distributions_discrete_cont_js(p, st.uniform(loc=0.5)))
-    print(distributions_discrete_cont_js(p, st.uniform(loc=0.5), n_samples=1000000))
-    
-    # xnorm = st.norm(loc=1) + st.norm(loc=0)
-    
-    # print(xnorm)
-    # print(distributions_discrete_cont_js(p, st.uniform(loc=0.5), n_samples=10000000))
 
 
 if __name__ == '__main__':

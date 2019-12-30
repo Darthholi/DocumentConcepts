@@ -53,7 +53,7 @@ class InputBoxRuleScorable(StochasticScorable):
                            classes=item[5:], **self.kwargs)
     
     def draw_objects(self, size, random_state=None):
-        assert isinstance(size, int)
+        assert isinstance(size, int) or isinstance(size, np.int_)
         return [self.interpret_sampled(item) for item in self.draw_samples(size, random_state)]
 
 
