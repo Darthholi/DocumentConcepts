@@ -213,7 +213,7 @@ def fixed_known_borders_all_boxes_noshuffle():
 
 
 @concept_experiments.command
-def fixed_known_borders_all_boxes_noshuffle():
+def fixed_known_borders_bigger_all_boxes_noshuffle():
     """
     Experiment with known borders of concepts but trying to predict all boxes (not only concept's interiors)
     and not shuffled.
@@ -240,7 +240,12 @@ def fixed_known_borders_all_boxes_noshuffle():
                                                 shuffle_bboxes=False
                                                 )
     print(max_acc)
-    
+
+
+"""
+Up until now we have discovered, that the "realistic setting" needs bigger network for the bigger number of classes and that if we do not shuffle them but make them predict everything,
+it gets to nice f1 score 0.91.
+"""
 
 @concept_experiments.command
 def fixed_known_borders_all_boxes_shuffle():
@@ -266,6 +271,50 @@ def fixed_known_borders_all_boxes_shuffle():
                                                        shuffle_bboxes=True
                                                        )
     print(max_acc)
+"""
+
+we took the bigger problem and bigger network and added shuffling. Still the network can do it.
+remember there is no rendering taking places and it knows all the apriori info on borders.
+
+The knowledge is, that the shuffling and predicting everything does not influence alone the score.
+
+
+# ok lets see hhow it can do it with apriori info ('run_keras_fixed_experiment_binary') and only with center bboxes
+    # gets to 0.97 binary acc but ourf1nonbg: 0.83, all f1micro 0.96
+    # 1) so first we need a bigger network? ('run_keras_fixed_experiment_binary_bigger')
+    # ok when making the network bigger it is able to - gets to 0.97 bin acc, ourf1nonbg: 0.94 all f1micro 0.98
+    # funny when  realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7):
+    # gets to acc: 0.99, nonbg f1: 0.98, micto fr: 0.99
+     # 2) now more realistic baseline - trying to predict all boxes (based on all others)
+    # realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), predict all, shuffle false
+    # goes to nonbg micro f1 0.87 (all micro f1 0.98)
+    # realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
+    # nonbg f1 0.91
+    # predicting all boxes is not a problem
+    # 3) Trying to predict all boxes and shuffled! Ok the same results nearly as 2) (1% higher even) so it is not memorizing anything
+    # shuffling is not the problem
+
+
+Now to the baseline, it should be to have just the rendered boxes and some small network:
+"""
+"""
+
+just to note we needed to add class&samples weights in the process.
+    class counts are cca 100 positive / per 8000 total
+
+    has effectivity of a random guessing, needs class weights:
+        def multiclass_temoral_class_weights(self, targets, class_weights):
+        s_weights = np.ones((targets.shape[0],))
+        # if we are counting the classes, the weights do not exist yet!
+        if class_weights is not None:
+            for i in range(len(s_weights)):
+                weight = 0.0
+                for itarget, target in enumerate(targets[i]):
+                    weight += class_weights[itarget][int(round(target))]
+                s_weights[i] = weight
+        return s_weights
+
+    """
     
 
 @concept_experiments.command
@@ -275,7 +324,7 @@ def baseline_rendered():
     realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1)
     goes to 0.59 nonbg micro
     with
-    bin_class_weights=(4.0, 1.0) goes to 0.80 nonbg micro f1
+    bin_class_weights=(4.0, 1.0) goes to 0.80-0.86 nonbg micro f1
     """
     run_keras_rendered_experiment_binary(realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), zero_class=[0]*4,
                                       validation_pages=100,
@@ -293,10 +342,12 @@ def baseline_rendered():
                                       bin_class_weights=(80.0, 1.0),
                                          )
 
+
 @concept_experiments.command
 def articlemodel():
     """
-    # articlemodel:
+    Now the model from our original article:
+    
     # tot_classes=18, num_pp_high=13, num_pp_low=7:
     # gets to nonbg micro f1 to >> 0.35 << in 90 epochs with bin_class_weights=(800.0, 1.0)
     # same for bin_class_weights=(80.0, 1.0)
@@ -333,27 +384,11 @@ def articlemodel():
     print(maxscore)
     
 """
-# ok lets see hhow it can do it with apriori info ('run_keras_fixed_experiment_binary') and only with center bboxes
-    # gets to 0.97 binary acc but ourf1nonbg: 0.83, all f1micro 0.96
-    # 1) so first we need a bigger network? ('run_keras_fixed_experiment_binary_bigger')
-    # ok when making the network bigger it is able to - gets to 0.97 bin acc, ourf1nonbg: 0.94 all f1micro 0.98
-    # funny when  realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7):
-    # gets to acc: 0.99, nonbg f1: 0.98, micto fr: 0.99
-    
-    # 2) now more realistic baseline - trying to predict all boxes (based on all others)
-    # realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), predict all, shuffle false
-    # goes to nonbg micro f1 0.87 (all micro f1 0.98)
-    # realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
-    # nonbg f1 0.91
-    # predicting all boxes is not a problem
-    # 3) Trying to predict all boxes and shuffled! Ok the same results nearly as 2) (1% higher even) so it is not memorizing anything
-    # shuffling is not the problem
-    # 4) So, the problem is either in the rendering-derendering.
-    
+    # now we see that the problem is either in the rendering-derendering or in predicting all the boxes.
     # lets either -- make classifier of noncenter bboxes  but WITH apriori info!
     # (or eval only the center ones)
     
-    # when tried prediccting all bboxes ( predict_all_boxes=True,), we got to 0.97 again.
+    # when tried prediccting all bboxes ( predict_all_boxes=True,), we got to 0.97 again. - so thats not the problem
     # ... even in the case of tot_classes=18, num_pp_high=13, num_pp_low=7
     
     # so when we  run the article model  on 1 concept per page  it should be also high....?
@@ -372,33 +407,19 @@ def articlemodel():
     # so we have 2 outcomes:
     # it helps to let the network see ALL boxes to ALL boxes in this case and not only using attention
     # the problem is different - in invoices there is some information we thought would be redundant when modeling with concepts.
-    # but so far when rendering-derendering only concepts, the network is unable to continue with a good precision.
+    # but so far when rendering-derendering only concepts, the network is unable to continue with a good score.
     
 """
-
-"""
-    class counts are cca 100 positive / per 8000 total
-
-    has effectivity of a random guessing, needs class weights:
-        def multiclass_temoral_class_weights(self, targets, class_weights):
-        s_weights = np.ones((targets.shape[0],))
-        # if we are counting the classes, the weights do not exist yet!
-        if class_weights is not None:
-            for i in range(len(s_weights)):
-                weight = 0.0
-                for itarget, target in enumerate(targets[i]):
-                    weight += class_weights[itarget][int(round(target))]
-                s_weights[i] = weight
-        return s_weights
-
-    """
 
 
 @concept_experiments.command
-def realistic_experiment():
-    
+def model_sees_all_to_all():
     """
-    # since we believe that it is now a harder task, lets try a model that sees everything without attention:
+    So we believe that it is now a harder task, lets try a model that sees everything without attention:
+    
+    # 0.79 nonbg f1 tot classes = 4(1,1), binclasssweights  1,1 nsiz2
+    # 0.65 nonbg f1 tot classes = 8(1,1), binclassweights  1,1 nsiz=1
+    """
     maxscore = run_keras_all2all_model(realistic_setting(tot_classes=4, num_pp_high=1, num_pp_low=1), zero_class=[0] * 4,
                                       validation_pages=100,
                                       n_epochs=100,
@@ -417,16 +438,18 @@ def realistic_experiment():
                                       n_siz=1
                                       )
     print(maxscore)
-    # 0.79 nonbg f1 tot classes = 4, weights  1,1 nsiz2
-    # 0.65 nonbg f1 tot classes = 8, weights  1,1 nsiz=1
-    """
-    
-    # now we have inspected the data and found out that the boundingboxes are more local.
-    # will that change our success?
-    # run_keras_articlemodel did not get better
-    #
-    """
-    maxscore = run_keras_articlemodel(realistic_setting(tot_classes=4, num_pp_high=1, num_pp_low=1, keep_local=True),
+
+"""
+now we have inspected the data and found out that the boundingboxes are more local.
+Made realistic setting to produce more local reasons:
+will that change our success?
+
+Rememeber that said baseline got to 0.80-0.86 even with keep local = false
+"""
+
+@concept_experiments.command
+def realistic_experiment_articlemodel_local():
+    maxscore = run_keras_articlemodel(realistic_setting(tot_classes=4, num_pp_high=1, num_pp_low=1, keep_near=True),
                                       zero_class=[0] * 4,
                                       validation_pages=100,
                                       n_epochs=100,
@@ -447,32 +470,32 @@ def realistic_experiment():
                                       n_siz=2
                                       )
     print(maxscore)
-    """
-    run_keras_rendered_experiment_binary(
-        realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1, keep_near=False),
-        zero_class=[0] * 4,
-        validation_pages=100,
-        n_epochs=100,
-        verbose=2,
-        stop_early=True,
-        key_metric='val_loss',
-        weights_best_fname='weightstmp.h5',
-        patience=20,
-        key_metric_mode='min',
-        pages_per_epoch=200,
-        batch_size=8,
-        df_proc_num=2,
-        neighbours=3,
-        bin_class_weights=(4.0, 1.0),
-    )
-    # realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1, keep_local=False) with
-    # bin_class_weights=(4.0, 1.0) goes to 0.86 nonbg micro f1
+"""
+
+So the result is, that:
+We have made an experimental environment, that allows for quick experiment setup.
+We tried to emulate invoice documents based on observation and assumptions on the data
+(observation about the data being close todo add figure)
+(assumption that the result box class depends only on some boxes --- comes from the fact that amount total: 100$ is fairly simple)
+and so our simulated setting does not match the original environment only in one aspect - the number of seemingly unimportant text boxes to the human eye.
+
+We have created a problem, that seemed similar to invoices and easy to get to 0.86 score with a simple baseline.
+But in reality, all the models, that are stronger on business documents failed and scored below the baseline, which means, that
+1) Our assumptions were not valid and the data cannot be simulated based on the assumptions
+2) The problem of business documents is indeed harder
+3) The models that are stronger on business documents are exploiting structures, similarities and bonds between the boxes,
+ that are not easily visible for the human eye.
+ Yes that means it could see some commonalities in the layouts logic (which we were not simulating, since our simulations are layout free).
+ 
+To conclude, to make a fast label reuse experimental environment, we need to abandon the idea of simple generators and proceed with dropping the visual information as that is the most memory heavy one.
 
 
-@concept_experiments.command
-def constant_experiment():
-    run_keras_fixed_experiment_categorical(random_testing_setting_distances())
-    # test_constant_models()
+
+"""
+
+
+
+#todo from now to the end (those were actually the first experiments):
 
 
 @concept_experiments.command
