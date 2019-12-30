@@ -398,7 +398,7 @@ def expand_batch(data):
     """
     str_o = StructIndexer.from_example(data)
     indexed = str_o.unpack_from(data)
-    batch_size = len(indexed[indexed.keys()[0]])  # if it is a numpy array, it should give us the leftmost dimension
+    batch_size = len(indexed[list(indexed.keys())[0]])  # if it is a numpy array, it should give us the leftmost dimension
     # or if it is just a list then the length of the list...
     for b in range(batch_size):
         expanded = {k: indexed[k][b] for k in indexed.keys()}

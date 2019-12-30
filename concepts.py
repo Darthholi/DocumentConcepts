@@ -445,7 +445,7 @@ class DistributionOfDistributions(StochasticScorable):
         return self.generated_to_objects(self.draw_samples(size, random_state))
     
     def generated_to_objects(self, init_dict):
-        size = init_dict[init_dict.keys()[0]].shape
+        size = init_dict[list(init_dict.keys())[0]].shape
         # assert all same sizes
         objects = np.empty(size, object)
         for i in np.ndindex(size):
@@ -567,4 +567,44 @@ class ConceptsRuleGenerator(object):
                  is_relative_position=True,
                  ):
         pass
+"""
+
+"""
+... here we paused the distribution of distributions.
+
+ConceptRulesDistribution(num_per_page=DistributionOfDistributions(st.randint,
+                                                                  {'low': Determined(1),
+                                                                   'high': StochasticScorableWrapper(st.randint(low=1, high=5)),
+                                                                    }),
+             present=DistributionOfDistributions(st.norm,
+                                                                  {'loc': StochasticScorableWrapper(st.norm(loc=0.5, scale=0.5)),
+                                                                   'scale': StochasticScorableWrapper(st.uniform(loc=0.2, scale=0.1)),
+                                                                    }),
+             # setting: each box has its own normal distribution that defines it.
+             center_position=DistributionOfDistributions(st.uniform,
+                                                                  {'loc': FixdimDistribution(st.uniform(loc=0.0, scale=0.1), 2),
+                                                                   'scale': FixdimDistribution(st.uniform(loc=0.8, scale=0.1), 2),
+                                                                    }),
+
+             center_size=DistributionOfDistributions(st.norm,
+                                                                  {'loc': FixdimDistribution(st.uniform(loc=0.0, scale=0.9), 2),
+                                                                   'scale': FixdimDistribution(st.uniform(loc=0.2, scale=0.1), 2),
+                                                                    }),
+             center_class,
+             output_class,
+              # the concepts boxes:
+             num_boxes_star_graph,
+             input_classes,
+             positions,  # of the center of the box
+             sizes,
+             is_relative_position=True,)
+uniforms = DistributionOfDistributions(st.uniform, {'loc': FixdimDistribution(st.uniform(loc=0.0, scale=0.5), 1),
+                                                    'scale': Determined(1.0)})
+samples = uniforms.draw_samples(1)
+score = uniforms.score_samples(samples)
+assert score is not None
+objects = uniforms.generated_to_objects(samples)
+assert objects is not None
+sampled_numbers = objects[0].draw_samples(1)
+assert sampled_numbers is not None
 """
