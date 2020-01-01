@@ -211,7 +211,7 @@ def run_keras_articlemodel(const_data_def=constant_testing_setting_multiclass(),
         total_counts = 0
         count_classes_gen = tf_dataset_as_iterator(gen.get_final_tf_data_dataset(pages_per_epoch, phase='train'))
         for _ in range(int(pages_per_epoch / batch_size)):
-            batch_data = count_classes_gen.next()
+            batch_data = next(count_classes_gen)
             classcounts += np.sum(batch_data[1], axis=(0, 1))
             total_counts += batch_data[1].shape[0] * batch_data[1].shape[1]
         print("class counts done {} / {}".format(classcounts, total_counts))  # cca 100/8000

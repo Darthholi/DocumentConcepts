@@ -6,20 +6,21 @@
 
 from __future__ import print_function, division
 
+from copy import copy
+
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as st
-from copy import copy
 from sacred import Experiment
 from sacred.initialize import Scaffold
 from sacred.utils import apply_backspaces_and_linefeeds
 
-from distributions import conditioned_continuous, StochasticScorableWrapper, FixdimDistribution, MultiDistribution, \
+from concepts_fixed import random_testing_setting_distances, realistic_setting, \
+    fixed_experiment_binary, run_keras_fixed_experiment_binary_bigger
+from concepts_rendered import run_keras_articlemodel, run_keras_rendered_experiment_binary, run_keras_all2all_model
+from distributions import conditioned_continuous, StochasticScorableWrapper, MultiDistribution, \
     DistributionAsRadial
-from concepts_fixed import run_keras_fixed_experiment_categorical, random_testing_setting_distances, realistic_setting, \
-    constant_testing_setting_multiclass, run_keras_fixed_experiment_binary, run_keras_fixed_experiment_binary_bigger
-from concepts_rendered import run_keras_articlemodel, run_keras_rendered_experiment_binary, run_keras_rendered_experiment_categorical
 
 
 # % matplotlib inline
@@ -143,7 +144,7 @@ def fixed_known_borders():
     Experiment with known borders of concepts: 'apriori info'.
     Gets to 0.97 bin acc, ourf1nonbg: 0.83 all f1micro 0.96,
     """
-    max_acc = run_keras_fixed_experiment_binary(realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1),
+    max_acc = fixed_experiment_binary(realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1),
                                       validation_pages=100,
                                       n_epochs=100,
                                       verbose=2,
@@ -157,7 +158,7 @@ def fixed_known_borders():
                                       df_proc_num=1,
                                       )
     print(max_acc)
-    
+
 
 @concept_experiments.command
 def fixed_known_borders_bigger():
@@ -166,21 +167,21 @@ def fixed_known_borders_bigger():
     Gets to 0.98 bin acc, ourf1nonbg: 0.97 all f1micro 0.99
     """
     max_acc = run_keras_fixed_experiment_binary_bigger(realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
-                                                validation_pages=100,
-                                                n_epochs=100,
-                                                verbose=2,
-                                                stop_early=True,
-                                                key_metric='val_loss',
-                                                weights_best_fname='weightstmp.h5',
-                                                patience=20,
-                                                key_metric_mode='min',
-                                                pages_per_epoch=200,
-                                                batch_size=8,
-                                                df_proc_num=1,
-                                                )
+                                                       validation_pages=100,
+                                                       n_epochs=100,
+                                                       verbose=2,
+                                                       stop_early=True,
+                                                       key_metric='val_loss',
+                                                       weights_best_fname='weightstmp.h5',
+                                                       patience=20,
+                                                       key_metric_mode='min',
+                                                       pages_per_epoch=200,
+                                                       batch_size=8,
+                                                       df_proc_num=1,
+                                                       )
     print(max_acc)
-    
-    
+
+
 @concept_experiments.command
 def fixed_known_borders_all_boxes_noshuffle():
     """
@@ -193,22 +194,22 @@ def fixed_known_borders_all_boxes_noshuffle():
     but realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7)
     gets to nonbg f1 0.71
     """
-    max_acc = run_keras_fixed_experiment_binary(realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
-                                                zero_class=[0]*18,
-                                                validation_pages=100,
-                                                n_epochs=100,
-                                                verbose=1,
-                                                stop_early=True,
-                                                key_metric='val_loss',
-                                                weights_best_fname='weightstmp.h5',
-                                                patience=20,
-                                                key_metric_mode='min',
-                                                pages_per_epoch=200,
-                                                batch_size=8,
-                                                df_proc_num=1,
-                                                predict_all_boxes=True,
-                                                shuffle_bboxes=False
-                                                )
+    max_acc = fixed_experiment_binary(realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
+                                      zero_class=[0] * 18,
+                                      validation_pages=100,
+                                      n_epochs=100,
+                                      verbose=1,
+                                      stop_early=True,
+                                      key_metric='val_loss',
+                                      weights_best_fname='weightstmp.h5',
+                                      patience=20,
+                                      key_metric_mode='min',
+                                      pages_per_epoch=200,
+                                      batch_size=8,
+                                      df_proc_num=1,
+                                      predict_all_boxes=True,
+                                      shuffle_bboxes=False
+                                      )
     print(max_acc)
 
 
@@ -224,21 +225,21 @@ def fixed_known_borders_bigger_all_boxes_noshuffle():
     nonbg f1 0.91
     """
     max_acc = run_keras_fixed_experiment_binary_bigger(realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
-                                                zero_class=[0] * 18,
-                                                validation_pages=100,
-                                                n_epochs=100,
-                                                verbose=2,
-                                                stop_early=True,
-                                                key_metric='val_loss',
-                                                weights_best_fname='weightstmp.h5',
-                                                patience=20,
-                                                key_metric_mode='min',
-                                                pages_per_epoch=200,
-                                                batch_size=8,
-                                                df_proc_num=2,
-                                                predict_all_boxes=True,
-                                                shuffle_bboxes=False
-                                                )
+                                                       zero_class=[0] * 18,
+                                                       validation_pages=100,
+                                                       n_epochs=100,
+                                                       verbose=2,
+                                                       stop_early=True,
+                                                       key_metric='val_loss',
+                                                       weights_best_fname='weightstmp.h5',
+                                                       patience=20,
+                                                       key_metric_mode='min',
+                                                       pages_per_epoch=200,
+                                                       batch_size=8,
+                                                       df_proc_num=2,
+                                                       predict_all_boxes=True,
+                                                       shuffle_bboxes=False
+                                                       )
     print(max_acc)
 
 
@@ -246,6 +247,7 @@ def fixed_known_borders_bigger_all_boxes_noshuffle():
 Up until now we have discovered, that the "realistic setting" needs bigger network for the bigger number of classes and that if we do not shuffle them but make them predict everything,
 it gets to nice f1 score 0.91.
 """
+
 
 @concept_experiments.command
 def fixed_known_borders_all_boxes_shuffle():
@@ -271,6 +273,8 @@ def fixed_known_borders_all_boxes_shuffle():
                                                        shuffle_bboxes=True
                                                        )
     print(max_acc)
+
+
 """
 
 we took the bigger problem and bigger network and added shuffling. Still the network can do it.
@@ -279,27 +283,23 @@ remember there is no rendering taking places and it knows all the apriori info o
 The knowledge is, that the shuffling and predicting everything does not influence alone the score.
 
 
-# ok lets see hhow it can do it with apriori info ('run_keras_fixed_experiment_binary') and only with center bboxes
-    # gets to 0.97 binary acc but ourf1nonbg: 0.83, all f1micro 0.96
-    # 1) so first we need a bigger network? ('run_keras_fixed_experiment_binary_bigger')
-    # ok when making the network bigger it is able to - gets to 0.97 bin acc, ourf1nonbg: 0.94 all f1micro 0.98
-    # funny when  realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7):
-    # gets to acc: 0.99, nonbg f1: 0.98, micto fr: 0.99
-     # 2) now more realistic baseline - trying to predict all boxes (based on all others)
-    # realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), predict all, shuffle false
-    # goes to nonbg micro f1 0.87 (all micro f1 0.98)
-    # realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
-    # nonbg f1 0.91
-    # predicting all boxes is not a problem
-    # 3) Trying to predict all boxes and shuffled! Ok the same results nearly as 2) (1% higher even) so it is not memorizing anything
-    # shuffling is not the problem
+    ok lets see hhow it can do it with apriori info ('run_keras_fixed_experiment_binary') and only with center bboxes
+    gets to 0.97 binary acc but ourf1nonbg: 0.83, all f1micro 0.96
+    1) so first we need a bigger network? ('run_keras_fixed_experiment_binary_bigger')
+    ok when making the network bigger it is able to - gets to 0.97 bin acc, ourf1nonbg: 0.94 all f1micro 0.98
+    funny when  realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7):
+    gets to acc: 0.99, nonbg f1: 0.98, micto fr: 0.99
+    2) now more realistic baseline - trying to predict all boxes (based on all others)
+    realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), predict all, shuffle false
+    goes to nonbg micro f1 0.87 (all micro f1 0.98)
+    realistic_setting(tot_classes=18, num_pp_high=13, num_pp_low=7),
+    nonbg f1 0.91
+    predicting all boxes is not a problem
+    3) Trying to predict all boxes and shuffled! Ok the same results nearly as 2) (1% higher even) so it is not memorizing anything
+    shuffling is not the problem
+    Now to the baseline, it should be to have just the rendered boxes and some small network:
 
-
-Now to the baseline, it should be to have just the rendered boxes and some small network:
-"""
-"""
-
-just to note we needed to add class&samples weights in the process.
+    ...just to note we needed to add class&samples weights in the process.
     class counts are cca 100 positive / per 8000 total
 
     has effectivity of a random guessing, needs class weights:
@@ -315,7 +315,7 @@ just to note we needed to add class&samples weights in the process.
         return s_weights
 
     """
-    
+
 
 @concept_experiments.command
 def baseline_rendered():
@@ -326,20 +326,21 @@ def baseline_rendered():
     with
     bin_class_weights=(4.0, 1.0) goes to 0.80-0.86 nonbg micro f1
     """
-    run_keras_rendered_experiment_binary(realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1), zero_class=[0]*4,
-                                      validation_pages=100,
-                                      n_epochs=100,
-                                      verbose=2,
-                                      stop_early=True,
-                                      key_metric='val_loss',
-                                      weights_best_fname='weightstmp.h5',
-                                      patience=20,
-                                      key_metric_mode='min',
-                                      pages_per_epoch=200,
-                                      batch_size=8,
-                                      df_proc_num=1,
-                                      neighbours=3,
-                                      bin_class_weights=(80.0, 1.0),
+    run_keras_rendered_experiment_binary(realistic_setting(tot_classes=4, num_pp_high=2, num_pp_low=1),
+                                         zero_class=[0] * 4,
+                                         validation_pages=100,
+                                         n_epochs=100,
+                                         verbose=2,
+                                         stop_early=True,
+                                         key_metric='val_loss',
+                                         weights_best_fname='weightstmp.h5',
+                                         patience=20,
+                                         key_metric_mode='min',
+                                         pages_per_epoch=200,
+                                         batch_size=8,
+                                         df_proc_num=1,
+                                         neighbours=3,
+                                         bin_class_weights=(80.0, 1.0),
                                          )
 
 
@@ -364,7 +365,7 @@ def articlemodel():
     # tot_classes = 4, num_pp_high = 2, num_pp_low = 1
     # 0.674
     """
-    maxscore = run_keras_articlemodel(realistic_setting(tot_classes=4, num_pp_high=1, num_pp_low=1), zero_class=[0]*4,
+    maxscore = run_keras_articlemodel(realistic_setting(tot_classes=4, num_pp_high=1, num_pp_low=1), zero_class=[0] * 4,
                                       validation_pages=100,
                                       n_epochs=100,
                                       verbose=2,
@@ -378,11 +379,13 @@ def articlemodel():
                                       df_proc_num=2,
                                       neighbours=3,
                                       # bin_class_weights=(80.0, 1.0),  # from 100/8000 positive class count for tot_classes=18, num_pp_high=13, num_pp_low=7
-                                      bin_class_weights=(4.0, 1.0), # from 80/700 positive class count for tot_classes=4, num_pp_high=1, num_pp_low=1
+                                      bin_class_weights=(4.0, 1.0),
+                                      # from 80/700 positive class count for tot_classes=4, num_pp_high=1, num_pp_low=1
                                       n_siz=2
                                       )
     print(maxscore)
-    
+
+
 """
     # now we see that the problem is either in the rendering-derendering or in predicting all the boxes.
     # lets either -- make classifier of noncenter bboxes  but WITH apriori info!
@@ -420,24 +423,26 @@ def model_sees_all_to_all():
     # 0.79 nonbg f1 tot classes = 4(1,1), binclasssweights  1,1 nsiz2
     # 0.65 nonbg f1 tot classes = 8(1,1), binclassweights  1,1 nsiz=1
     """
-    maxscore = run_keras_all2all_model(realistic_setting(tot_classes=4, num_pp_high=1, num_pp_low=1), zero_class=[0] * 4,
-                                      validation_pages=100,
-                                      n_epochs=100,
-                                      verbose=2,
-                                      stop_early=True,
-                                      key_metric='val_loss',
-                                      weights_best_fname='weightstmp.h5',
-                                      patience=20,
-                                      key_metric_mode='min',
-                                      pages_per_epoch=200,
-                                      batch_size=4,
-                                      df_proc_num=2,
-                                      neighbours=3,
-                                      bin_class_weights=(1.0, 1.0),
-                                      #bin_class_weights=(80.0, 1.0),  # from 100/8000 positive class count
-                                      n_siz=1
-                                      )
+    maxscore = run_keras_all2all_model(realistic_setting(tot_classes=4, num_pp_high=1, num_pp_low=1),
+                                       zero_class=[0] * 4,
+                                       validation_pages=100,
+                                       n_epochs=100,
+                                       verbose=2,
+                                       stop_early=True,
+                                       key_metric='val_loss',
+                                       weights_best_fname='weightstmp.h5',
+                                       patience=20,
+                                       key_metric_mode='min',
+                                       pages_per_epoch=200,
+                                       batch_size=4,
+                                       df_proc_num=2,
+                                       neighbours=3,
+                                       bin_class_weights=(1.0, 1.0),
+                                       # bin_class_weights=(80.0, 1.0),  # from 100/8000 positive class count
+                                       n_siz=1
+                                       )
     print(maxscore)
+
 
 """
 now we have inspected the data and found out that the boundingboxes are more local.
@@ -447,8 +452,13 @@ will that change our success?
 Rememeber that said baseline got to 0.80-0.86 even with keep local = false
 """
 
+
 @concept_experiments.command
 def realistic_experiment_articlemodel_local():
+    """
+    Runs article model on small local problem.
+    Gets to 0.81 f1, which does not beat the baseline
+    """
     maxscore = run_keras_articlemodel(realistic_setting(tot_classes=4, num_pp_high=1, num_pp_low=1, keep_near=True),
                                       zero_class=[0] * 4,
                                       validation_pages=100,
@@ -461,7 +471,7 @@ def realistic_experiment_articlemodel_local():
                                       key_metric_mode='min',
                                       pages_per_epoch=200,
                                       batch_size=8,
-                                      df_proc_num=2,
+                                      df_proc_num=1,
                                       neighbours=3,
                                       # bin_class_weights=(80.0, 1.0),  # from 100/8000 positive class count for
                                       # tot_classes=18, num_pp_high=13, num_pp_low=7
@@ -470,6 +480,8 @@ def realistic_experiment_articlemodel_local():
                                       n_siz=2
                                       )
     print(maxscore)
+
+
 """
 
 So the result is, that:
@@ -492,119 +504,6 @@ To conclude, to make a fast label reuse experimental environment, we need to aba
 
 
 """
-
-
-
-#todo from now to the end (those were actually the first experiments):
-
-
-@concept_experiments.command
-def rendered_experiment():
-    # test_rendered_concepts_tf_gen()
-    '''
-    OK
-    run_keras_rendered_experiment_categorical(constant_testing_setting_multiclass(), zero_class=[1, 0],
-                                              validation_pages=100,
-                                              n_epochs=100,
-                                              verbose=1,
-                                              stop_early=True,
-                                              key_metric='val_categorical_accuracy',
-                                              weights_best_fname='weightstmp.h5',
-                                              patience=15,
-                                              key_metric_mode='max',
-                                              pages_per_epoch=200,
-                                              batch_size=2,
-                                              df_proc_num=2
-                                              )
-                                              # should be > 0.9 (we got to 1.0)
-    '''
-    '''
-    maxscore = run_keras_rendered_experiment_categorical(random_testing_setting(), zero_class=[1, 0, 0, 0],
-                                              validation_pages=100,
-                                              n_epochs=100,
-                                              verbose=2,
-                                              stop_early=True,
-                                              key_metric='val_categorical_accuracy',
-                                              weights_best_fname='weightstmp.h5',
-                                              patience=15,
-                                              key_metric_mode='max',
-                                              pages_per_epoch=200,
-                                              batch_size=4,
-                                              df_proc_num=2
-                                              )
-    print(maxscore)  # 0.8151
-    #  why - because the example has only two ways of differentiating between classes - center position AND number of
-    # neighbors in a concept. which we cannot know for sure. OK.
-    '''
-    
-    '''
-    random_testing_setting_distances - same classes of nearly everything but depends on directions and distances
-    sxpscore = run_keras_rendered_experiment_binary(random_testing_setting_distances(), zero_class=[0, 0, 0, 0],
-                                         validation_pages=20,
-                                         n_epochs=100,
-                                         verbose=2,
-                                         stop_early=True,
-                                         key_metric='val_loss',
-                                         weights_best_fname='weightstmp.h5',
-                                         patience=20,
-                                         key_metric_mode='min',
-                                         pages_per_epoch=100,
-                                         batch_size=4,
-                                         df_proc_num=2
-                                         )
-    okay the base model with our problem definition and its nonbg f1 metric fails misreably.
-    '''
-    
-    '''
-    ok this one also displays the f1 nonbg score and it gets only to like 0.43
-    (actually jumps 0.40-0.45)
-    Is not 100% because the discretization happens only based on 1) center positions (okay) 2) distances, which we cannot know for sure,
-    because we do not know to which concept they belong now.
-    maxscore = run_keras_articlemodel(random_testing_setting_distances(), zero_class=[0, 0, 0, 0],
-                                                         validation_pages=100,
-                                                         n_epochs=100,
-                                                         verbose=2,
-                                                         stop_early=True,
-                                                         key_metric='val_loss',
-                                                         weights_best_fname='weightstmp.h5',
-                                                         patience=20,
-                                                         key_metric_mode='min',
-                                                         pages_per_epoch=200,
-                                                         batch_size=8,
-                                                         df_proc_num=2
-                                                         )
-    print(maxscore)
-    ... has, of course, bigger succes (even in keras metric only) when we approach it as categorical problem.
-    But by definition our problems are binary classifications.
-    '''
-    
-    # so far the results are:
-    # - finished rendered/derenderer
-    # - articlemodel able to tackle hard things at least somehow
-    # - better then the simplest model
-    # - dropped score for obvious hard cases
-    # we want: random rule definition to test the average cases
-    # and do the analysis of the networks capacity based on hyperparameters
-    # we can: find a better architecture then the one from article
-    #  ... the generator needs to work for true label reuse
-    
-    # lets see, make the epochs bigger, but keep binary problem
-    maxscore = run_keras_articlemodel(random_testing_setting_distances(), zero_class=[0, 0, 0, 0],
-                                      validation_pages=100,
-                                      n_epochs=100,
-                                      verbose=2,
-                                      stop_early=True,
-                                      key_metric='val_loss',
-                                      weights_best_fname='weightstmp.h5',
-                                      patience=20,
-                                      key_metric_mode='min',
-                                      pages_per_epoch=200,
-                                      batch_size=8,
-                                      df_proc_num=2,
-                                      neighbours=3
-                                      )
-    print(maxscore)
-
 
 if __name__ == '__main__':
     concept_experiments.run_commandline()

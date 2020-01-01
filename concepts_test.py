@@ -4,7 +4,7 @@ import tensorflow as tf
 from scipy import stats as st
 
 from concepts import DistributionOfDistributions
-from concepts_fixed import constant_testing_setting, deep_eps_compare, run_keras_fixed_experiment_binary, \
+from concepts_fixed import constant_testing_setting, deep_eps_compare, fixed_experiment_binary, \
     constant_testing_setting_2pg, constant_wrong_testing_setting_2pg, run_keras_fixed_experiment_categorical, \
     random_testing_setting, random_testing_setting_distances, constant_testing_setting_multiclass, \
     constant_testing_setting_more_inboxes, small_testing_setting, small_testing_setting_fixdim_class
@@ -109,7 +109,7 @@ def test_constant_models_binary(data_setting, accept_range):
     Test that the fixed binary experiment can easily figure the constant testing settings
     (and fail when we provide misleading data).
     """
-    val_metric = run_keras_fixed_experiment_binary(data_setting, df_proc_num=1)
+    val_metric = fixed_experiment_binary(data_setting, df_proc_num=1)
     assert val_metric >= accept_range[0] and val_metric <= accept_range[1]
 
 

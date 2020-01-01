@@ -475,22 +475,22 @@ def deep_eps_compare(a, b, eps=0.0000001):
     return False
 
 
-def run_keras_fixed_experiment_binary(const_data_def=constant_testing_setting_2pg(),
-                                      validation_pages=6,
-                                      n_epochs=20,
-                                      verbose=2,
-                                      stop_early=True,
-                                      key_metric='val_loss',
-                                      weights_best_fname='weightstmp.h5',
-                                      patience=4,
-                                      key_metric_mode='min',
-                                      pages_per_epoch=2,
-                                      batch_size=2,
-                                      df_proc_num=2,
-                                      zero_class=0,
-                                      predict_all_boxes=False,
-                                      shuffle_bboxes=False
-                                      ):
+def fixed_experiment_binary(const_data_def=constant_testing_setting_2pg(),
+                            validation_pages=6,
+                            n_epochs=20,
+                            verbose=2,
+                            stop_early=True,
+                            key_metric='val_loss',
+                            weights_best_fname='weightstmp.h5',
+                            patience=4,
+                            key_metric_mode='min',
+                            pages_per_epoch=2,
+                            batch_size=2,
+                            df_proc_num=2,
+                            zero_class=0,
+                            predict_all_boxes=False,
+                            shuffle_bboxes=False
+                            ):
     """
     Runs a simplest model against a (mostly) fixed dataset and returns the last epoch accuracy.
     """

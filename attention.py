@@ -246,8 +246,7 @@ class AttentionTransformer(Layer):
     """
     
     def __init__(self, usesoftmax=True, num_units=None, num_heads=8, dropout_rate=0, activation='relu', causality=False,
-                 usequerymasks=True,
-                 **kwargs):
+                 usequerymasks=True, **kwargs):
         self.activation = activation
         self.num_units = num_units
         self.num_heads = num_heads
@@ -353,7 +352,9 @@ class AttentionTransformer(Layer):
                   scope="ln",
                   reuse=None):
         """Applies layer normalization.
+
         Args:
+        ----
           inputs: A tensor with 2 or more dimensions, where the first dimension has
             `batch_size`.
           epsilon: A floating number. A very small number for preventing ZeroDivision Error.
@@ -361,7 +362,7 @@ class AttentionTransformer(Layer):
           reuse: Boolean, whether to reuse the weights of a previous layer
             by the same name.
 
-        Returns:
+        Returns
         -------
           A tensor with the same shape and data dtype as `inputs`.
         """
@@ -385,7 +386,9 @@ class AttentionTransformer(Layer):
                                       usesoftmax=True,
                                       reuse=None):
         """Applies multihead attention mechanism. Just the computation eithout trainable weights.
+
         Args:
+        ----
           queries: A 3d tensor with shape of [N, T_q, C_q].
           keys: A 3d tensor with shape of [N, T_k, C_k].
           causality: Boolean. If true, units that reference the future are masked.
@@ -437,6 +440,7 @@ class AttentionTransformer(Layer):
             # Restore shape
             outputs = tf.concat(tf.split(outputs, num_heads, axis=0), axis=2)  # (N, T_q, C)
             # Residual connection #still the same dimension
-            # we want to do this: outputs += queries # this can happen ONLY if the dimensionality of num_units == C_q
-            # and not care about the dimensions, so to use slicing or padding
-            # assert self.
+            outputs += queries
+            # Normalize
+            outputs = self.normalize(outputs)  # (N, T_q, C)
+        return outputs
