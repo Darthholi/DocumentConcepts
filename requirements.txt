@@ -10,4 +10,4 @@ pprint
 tempfile
 warnings
 six
-tensorflow-gpu==1.13.2
+tensorflow-gpu==1.15.0
