@@ -1,6 +1,3 @@
-# -*- coding: utf8 -*-
-from __future__ import division
-
 import copy
 from collections import Counter
 
@@ -536,7 +533,7 @@ class ConceptRulesDistribution(object):
 class ConceptsRuleGenerator(object):
     '''
     generate rules:
-    Rules generating process: (because for later for label reuse we need to be able to generate not only concepts,
+    Rules generating process: (because for later for one shot learning we need to be able to generate not only concepts,
     but also new rules!)
     - how many (of already generated rules) to check for uniqueness (of the newly created rule)
       - (we will check by some similarity metric of two rules against a threshold)

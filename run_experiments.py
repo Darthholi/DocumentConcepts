@@ -1,10 +1,6 @@
-#!/usr/bin/python
-# -*- coding: utf8 -*-
 """
 
 """
-
-from __future__ import print_function, division
 
 from copy import copy
 

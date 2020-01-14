@@ -1,0 +1,13 @@
+numpy
+keras
+scipy
+tensorpack
+pytest
+matplotlib
+sacred
+datetime
+pprint
+tempfile
+warnings
+six
+tensorflow-gpu==1.13.2

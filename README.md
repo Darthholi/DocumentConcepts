@@ -4,7 +4,12 @@ This repository displays a process we went through to create a simulated busines
 All experiments could be run as `python run_experiments.py command_name`, where command name is the name of the experiment.
 Simplest experiments are provided as tests in `concepts_test.py`.  
 The code contains codes for model from our article https://arxiv.org/abs/1904.12577 together with generators code and some easier models
-(using tf.data.dataset and tensorpack dataflows) possibly enabling fast experimentation. 
+(using tf.data.dataset and tensorpack dataflows) possibly enabling fast experimentation.
+
+###### Installation
+Needs cuda and tensorflow installed (we recommend either a https://lambdalabs.com/lambda-stack-deep-learning-software or google collab),
+but possibly can run also on tensorflow cpu system.
+other requirements are written in `requirements.txt` ready for pip install.
 
 ##### Introduction
 
@@ -68,6 +73,6 @@ Note we do not use layout information in our models anyway, the networks see all
 and yet it seems that they are able to use commonalities to get to better results, since when we generate data without any layouts, the results get worse. 
 
 
-To make a fast label reuse experimental environment, we need to abandon the idea of simple generators and proceed with dropping the visual information as that is the most memory heavy one.
+To make a fast (even one-shot learning) experimental environment, we would need to abandon the idea of simple generators and proceed with dropping the visual information as that is the most memory heavy one.
 
  

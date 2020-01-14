@@ -559,7 +559,7 @@ def fixed_experiment_binary(const_data_def=constant_testing_setting_2pg(),
         # class_weight=class_weight,
         # keras cannot use class weight and sample weights at the same time
         validation_data=tf_dataset_as_iterator(gen.get_final_tf_data_dataset(validation_pages, phase='val')),
-        # we validate on the same set btw
+        # we validate on the same set because it is a random generator, so the data are never the same
         validation_steps=validation_steps,
         callbacks=[callbacks[key] for key in callbacks],
         workers=0,  # because we use dataflow
@@ -654,7 +654,7 @@ def run_keras_fixed_experiment_binary_bigger(const_data_def=constant_testing_set
         # class_weight=class_weight,
         # keras cannot use class weight and sample weights at the same time
         validation_data=tf_dataset_as_iterator(gen.get_final_tf_data_dataset(validation_pages, phase='val')),
-        # we validate on the same set btw
+        # we validate on the same set because it is a random generator, so the data are never the same
         validation_steps=validation_steps,
         callbacks=[callbacks[key] for key in callbacks],
         workers=0,  # because we use dataflow
@@ -728,7 +728,7 @@ def run_keras_fixed_experiment_categorical(const_data_def=constant_testing_setti
         # class_weight=class_weight,
         # keras cannot use class weight and sample weights at the same time
         validation_data=tf_dataset_as_iterator(gen.get_final_tf_data_dataset(validation_steps, phase='val')),
-        # we validate on the same set btw
+        # we validate on the same set because it is a random generator, so the data are never the same
         validation_steps=validation_steps,
         callbacks=[callbacks[key] for key in callbacks],
         workers=0,  # because we use dataflow
