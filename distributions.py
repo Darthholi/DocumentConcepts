@@ -1,3 +1,7 @@
+#
+# COPYRIGHT Martin Holecek 2019
+#
+
 import numbers
 
 import numpy as np

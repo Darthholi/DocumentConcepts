@@ -1,3 +1,7 @@
+#
+# COPYRIGHT Martin Holecek 2019
+#
+
 import numpy as np
 import pytest
 import tensorflow as tf

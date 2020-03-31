@@ -1,3 +1,7 @@
+#
+# COPYRIGHT Martin Holecek 2019
+#
+
 import numpy as np
 import scipy.stats as st
 from keras import Model, Input, metrics

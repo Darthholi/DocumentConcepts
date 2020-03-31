@@ -1,6 +1,7 @@
-"""
+#
+# COPYRIGHT Martin Holecek 2019
+#
 
-"""
 
 from copy import copy
 

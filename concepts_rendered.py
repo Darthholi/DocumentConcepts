@@ -1,3 +1,7 @@
+#
+# COPYRIGHT Martin Holecek 2019
+#
+
 import keras.backend as K
 import numpy as np
 import tensorflow as tf

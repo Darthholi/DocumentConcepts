@@ -1,3 +1,7 @@
+#
+# COPYRIGHT Martin Holecek 2019
+#
+
 import numpy as np
 import tensorflow as tf
 from tensorpack import DataFromList, MapData, MultiProcessMapData
